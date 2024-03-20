@@ -45,9 +45,9 @@ class ShowContextData(load.LoaderPlugin):
         edit.setWindowTitle(
             "Context data for: "
             "{0[project][name]} > "
-            "{0[asset][name]} > "
-            "{0[subset][name]} > "
-            "v{0[version][name]:03d} > "
+            "{0[folder][name]} > "
+            "{0[product][name]} > "
+            "{0[version][name]} > "
             "{0[representation][name]}".format(context)
         )
         edit.insertPlainText(json_str)
