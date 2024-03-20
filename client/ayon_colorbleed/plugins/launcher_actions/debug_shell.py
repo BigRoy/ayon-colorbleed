@@ -1,20 +1,23 @@
-import typing
+from typing import Optional, List
 import os
 import subprocess
 
-from ayon_core.pipeline import LauncherAction
-from ayon_api import get_project
+from qtpy import QtWidgets, QtGui, QtCore
 
-if typing.TYPE_CHECKING:
-    from typing import Optional
-    from qtpy import QtGui
-    from ayon_core.lib.applications import Application
+from ayon_core.lib.applications import (
+    Application,
+    ApplicationManager,
+    get_app_environments_for_context
+)
+from ayon_core.pipeline import LauncherAction
+from ayon_core.style import load_stylesheet
+from ayon_api import get_project
 
 
 def get_application_qt_icon(
-        application: "Application"
-) -> "Optional[QtGui.QIcon]":
-    """Get the Q"""
+        application: Application
+) -> Optional[QtGui.QIcon]:
+    """Return QtGui.QIcon for an Application"""
     # TODO: Improve workflow to get the icon, remove 'color' hack
     from ayon_core.tools.launcher.models.actions import get_action_icon
     from ayon_core.tools.utils.lib import get_qt_icon
@@ -30,14 +33,11 @@ class DebugShell(LauncherAction):
     color = "#e8770e"
     order = 10
 
-    def is_compatible(self, session):
+    def is_compatible(self, session: dict) -> bool:
         required = {"AYON_PROJECT_NAME", "AYON_FOLDER_PATH", "AYON_TASK_NAME"}
         return all(session.get(key) for key in required)
 
-    def process(self, session, **kwargs):
-        from ayon_core.lib.applications import get_app_environments_for_context
-        from qtpy import QtGui
-
+    def process(self, session: dict, **kwargs):
         # Get cursor position directly so the menu shows closer to where user
         # clicked because the get applications logic might take a brief moment
         pos = QtGui.QCursor.pos()
@@ -48,16 +48,15 @@ class DebugShell(LauncherAction):
         task = session["AYON_TASK_NAME"]
 
         applications = self.get_applications(project)
-        result = self.choose_app(applications, pos)
-        if not result:
+        app = self.choose_app(applications, pos)
+        if not app:
             return
 
-        app_name, app = result
-        print(f"Retrieving environment for: {app_name}..")
+        print(f"Retrieving environment for: {app.full_label}..")
         env = get_app_environments_for_context(project,
                                                folder_path,
                                                task,
-                                               app_name)
+                                               app.full_name)
 
         # If an executable is found. Then add the parent folder to PATH
         # just so we can run the application easily from the command line.
@@ -72,42 +71,38 @@ class DebugShell(LauncherAction):
         if cwd:
             print(f"Setting Work Directory: {cwd}")
 
-        print(f"Launch cmd in environment of {app_name}..")
+        print(f"Launch cmd in environment of {app.full_label}..")
         subprocess.Popen("cmd",
                          env=env,
                          cwd=cwd,
                          creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-    def choose_app(self, applications, pos):
+    @staticmethod
+    def choose_app(applications: List[Application],
+                   pos: QtCore.QPoint) -> Optional[Application]:
         """Show menu to choose from list of applications"""
-        import ayon_core.style
-        from qtpy import QtWidgets
-
         menu = QtWidgets.QMenu()
-        menu.setStyleSheet(ayon_core.style.load_stylesheet())
+        menu.setAttribute(QtCore.Qt.WA_DeleteOnClose)  # force garbage collect
+        menu.setStyleSheet(load_stylesheet())
 
         # Sort applications
-        applications = sorted(
-            applications.items(),
-            key=lambda item: item[1].full_label
-        )
+        applications.sort(key=lambda item: item.full_label)
 
-        for app_name, app in applications:
-            icon = get_application_qt_icon(app)
-
+        for app in applications:
             menu_action = QtWidgets.QAction(app.full_label, parent=menu)
+            icon = get_application_qt_icon(app)
             if icon:
                 menu_action.setIcon(icon)
-            menu_action.setData((app_name, app))
+            menu_action.setData(app)
             menu.addAction(menu_action)
 
         result = menu.exec_(pos)
         if result:
             return result.data()
 
-    def get_applications(self, project_name):
+    @staticmethod
+    def get_applications(project_name: str) -> List[Application]:
         """Return the enabled applications for the project"""
-        from ayon_core.lib import ApplicationManager
 
         # Get applications
         manager = ApplicationManager()
@@ -119,11 +114,11 @@ class DebugShell(LauncherAction):
 
         # Filter to apps valid for this current project, with logic from:
         # `ayon_core.tools.launcher.models.actions.ApplicationAction.is_compatible`  # noqa
-        applications = {}
+        applications = []
         for app_name in project_entity["attrib"].get("applications", []):
             app = manager.applications.get(app_name)
             if not app or not app.enabled:
                 continue
-            applications[app_name] = app
+            applications.append(app)
 
         return applications
