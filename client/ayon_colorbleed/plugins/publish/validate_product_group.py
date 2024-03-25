@@ -1,7 +1,7 @@
 import pyblish.api
 
 from ayon_core.pipeline.publish import OpenPypePyblishPluginMixin
-from ayon_core.client import get_product_by_name
+from ayon_api import get_product_by_name
 
 
 class ValidateProductGroupChange(pyblish.api.InstancePlugin,
