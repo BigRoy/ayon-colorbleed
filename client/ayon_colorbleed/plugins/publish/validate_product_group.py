@@ -1,11 +1,11 @@
 import pyblish.api
 
-from ayon_core.pipeline.publish import OpenPypePyblishPluginMixin
+from ayon_core.pipeline.publish import AYONPyblishPluginMixin
 from ayon_api import get_product_by_name
 
 
 class ValidateProductGroupChange(pyblish.api.InstancePlugin,
-                                OpenPypePyblishPluginMixin):
+                                 AYONPyblishPluginMixin):
     """Log a warning if `productGroup` changes from current product's group"""
 
     order = pyblish.api.ValidatorOrder

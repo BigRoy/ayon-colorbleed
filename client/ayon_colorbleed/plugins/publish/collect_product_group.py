@@ -1,10 +1,10 @@
 import pyblish.api
 from ayon_core.lib import TextDef
-from ayon_core.pipeline.publish import OpenPypePyblishPluginMixin
+from ayon_core.pipeline.publish import AYONPyblishPluginMixin
 
 
 class CollectUserProductGroup(pyblish.api.InstancePlugin,
-                             OpenPypePyblishPluginMixin):
+                              AYONPyblishPluginMixin):
     """Allow user to define `productGroup` on publish in new publisher"""
 
     order = pyblish.api.CollectorOrder + 0.499
