@@ -11,7 +11,6 @@ from ayon_core.lib.applications import (
 )
 from ayon_core.pipeline import LauncherAction
 from ayon_core.style import load_stylesheet
-from ayon_api import get_project
 
 
 def get_application_qt_icon(
@@ -33,29 +32,27 @@ class DebugShell(LauncherAction):
     color = "#e8770e"
     order = 10
 
-    def is_compatible(self, session: dict) -> bool:
-        required = {"AYON_PROJECT_NAME", "AYON_FOLDER_PATH", "AYON_TASK_NAME"}
-        return all(session.get(key) for key in required)
+    def is_compatible(self, selection) -> bool:
+        return all((
+            selection.is_task_selected,
+            selection.is_folder_selected,
+            selection.is_project_selected,
+        ))
 
-    def process(self, session: dict, **kwargs):
+    def process(self, selection, **kwargs):
         # Get cursor position directly so the menu shows closer to where user
         # clicked because the get applications logic might take a brief moment
         pos = QtGui.QCursor.pos()
 
-        # Get the environment
-        project = session["AYON_PROJECT_NAME"]
-        folder_path = session["AYON_FOLDER_PATH"]
-        task = session["AYON_TASK_NAME"]
-
-        applications = self.get_applications(project)
+        applications = self.get_applications(selection.project_entity)
         app = self.choose_app(applications, pos)
         if not app:
             return
 
         print(f"Retrieving environment for: {app.full_label}..")
-        env = get_app_environments_for_context(project,
-                                               folder_path,
-                                               task,
+        env = get_app_environments_for_context(selection.project_name,
+                                               selection.folder_path,
+                                               selection.task_name,
                                                app.full_name)
 
         # If an executable is found. Then add the parent folder to PATH
@@ -101,16 +98,11 @@ class DebugShell(LauncherAction):
             return result.data()
 
     @staticmethod
-    def get_applications(project_name: str) -> List[Application]:
+    def get_applications(project_entity: dict) -> List[Application]:
         """Return the enabled applications for the project"""
 
         # Get applications
         manager = ApplicationManager()
-
-        # Create mongo connection
-        project_entity = get_project(project_name,
-                                     fields=["attrib.applications"])
-        assert project_entity, "Project not found. This is a bug."
 
         # Filter to apps valid for this current project, with logic from:
         # `ayon_core.tools.launcher.models.actions.ApplicationAction.is_compatible`  # noqa

@@ -38,8 +38,8 @@ class ShowInFtrack(LauncherAction):
     def get_ftrack_addon():
         return AddonsManager().addons_by_name.get("ftrack")
 
-    def is_compatible(self, session):
-        if not session.get("AYON_PROJECT_NAME"):
+    def is_compatible(self, selection):
+        if not selection.is_project_selected:
             return False
 
         ftrack_addon = self.get_ftrack_addon()
@@ -48,14 +48,14 @@ class ShowInFtrack(LauncherAction):
 
         return True
 
-    def process(self, session, **kwargs):
+    def process(self, selection, **kwargs):
 
         ftrack_addon = self.get_ftrack_addon()
         ftrack_url = ftrack_addon.ftrack_url
 
         # Context inputs
-        project_name = session["AYON_PROJECT_NAME"]
-        folder_path = session.get("AYON_FOLDER_PATH", None)
+        project_name = selection.project_name
+        folder_path = selection.folder_path
         # TODO: implement task entity support?
         # task_name = session.get("AYON_TASK_NAME", None)
 
