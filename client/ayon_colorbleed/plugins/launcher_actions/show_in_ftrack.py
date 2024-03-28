@@ -61,7 +61,7 @@ class ShowInFtrack(LauncherAction):
 
         fields = ["data.ftrackId"]
         project_entity = get_project(project_name=project_name,
-                              fields=fields)
+                                     fields=fields)
         if not project_entity:
             raise RuntimeError(f"Project {project_name} not found.")
 
