@@ -4,11 +4,11 @@ import subprocess
 
 from qtpy import QtWidgets, QtGui, QtCore
 
-from ayon_core.lib.applications import (
+from ayon_applications import (
     Application,
     ApplicationManager,
-    get_app_environments_for_context
 )
+from ayon_applications.utils import get_app_environments_for_context
 from ayon_core.pipeline import LauncherAction
 from ayon_core.style import load_stylesheet
 
