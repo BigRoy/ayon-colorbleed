@@ -10,7 +10,7 @@ class ShowPublishInExplorer(load.LoaderPlugin):
     """Show publish in explorer"""
 
     product_types = {"*"}
-    representations = ["*"]
+    representations = {"*"}
 
     enabled = (
         not is_running_from_build() or

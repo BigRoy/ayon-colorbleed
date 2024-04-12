@@ -10,7 +10,7 @@ class ShowContextData(load.LoaderPlugin):
     """Debug context data of representation"""
 
     product_types = {"*"}
-    representations = ["*"]
+    representations = {"*"}
 
     enabled = (
         not is_running_from_build() or
