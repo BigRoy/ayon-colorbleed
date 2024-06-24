@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 import os
 import subprocess
 
@@ -75,7 +75,7 @@ class DebugShell(LauncherAction):
                          creationflags=subprocess.CREATE_NEW_CONSOLE)
 
     @staticmethod
-    def choose_app(applications: List[Application],
+    def choose_app(applications: list[Application],
                    pos: QtCore.QPoint) -> Optional[Application]:
         """Show menu to choose from list of applications"""
         menu = QtWidgets.QMenu()
@@ -98,7 +98,7 @@ class DebugShell(LauncherAction):
             return result.data()
 
     @staticmethod
-    def get_applications(project_entity: dict) -> List[Application]:
+    def get_applications(project_entity: dict) -> list[Application]:
         """Return the enabled applications for the project"""
 
         # Get applications
