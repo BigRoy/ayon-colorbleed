@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
-"""Package declaring AYON addon 'launch_scripts' version."""
+"""Package declaring Colorbleed addon version."""
 __version__ = "0.0.5"
