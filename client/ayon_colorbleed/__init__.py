@@ -4,10 +4,17 @@ from ayon_core.addon import AYONAddon
 from ayon_core.addon.interfaces import IPluginPaths
 
 from .version import __version__
+<<<<<<< HEAD
 
 class ColorbleedAddon(AYONAddon, IPluginPaths):
     name = "colorbleed"
     title = "Colorbleed"
+=======
+
+
+class ColorbleedAddon(AYONAddon, IPluginPaths):
+    name = "colorbleed"
+>>>>>>> main
     version = __version__
 
     def get_plugin_paths(self):
