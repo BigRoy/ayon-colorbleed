@@ -3,9 +3,12 @@ import os
 from ayon_core.addon import AYONAddon
 from ayon_core.addon.interfaces import IPluginPaths
 
+from .version import __version__
 
 class ColorbleedAddon(AYONAddon, IPluginPaths):
     name = "colorbleed"
+    title = "Colorbleed"
+    version = __version__
 
     def get_plugin_paths(self):
         """Implementation of IPluginPaths to get plugin paths."""
