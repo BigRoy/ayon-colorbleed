@@ -17,7 +17,7 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
         plugins_dir = os.path.join(current_dir, "plugins")
 
         return {
-            "actions": [os.path.join(plugins_dir, "launcher_actions")],
+            # "actions": [os.path.join(plugins_dir, "launcher_actions")],
             "load": [os.path.join(plugins_dir, "load")],
             "publish": [os.path.join(plugins_dir, "publish")]
         }
