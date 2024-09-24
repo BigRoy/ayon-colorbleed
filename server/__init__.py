@@ -59,31 +59,27 @@ class ColorbleedAddon(BaseServerAddon):
     ) -> "ExecuteResponseModel":
         """Execute an action provided by the addon"""
         logging.debug(f"Executing ayon-colorbleed action: {executor.context}")
-        # context = executor.context
-        # project_name = context.project_name
-        # representation_ids = list()
-        # for entity_subtype, entity_id in zip(context.entity_subtypes,
-        #                                      context.entity_ids):
-        #     if entity_subtype == "representation":
-        #         representation_ids.append(entity_id)
-        # if not representation_ids:
-        #     return await executor.get_server_action_response(
-        #         success=True,
-        #         message="No representations"
-        #     )
-
-        # TODO: Get the AYON entity URIs instead so the client running
-        #  can resolve the entity's filepath
-        filepath = r'E:/test.png'
+        context = executor.context
+        if not context.entity_type:
+            return await executor.get_server_action_response(
+                success=True,
+                message=f"No entity type in context: {context}"
+            )
         if executor.identifier == "colorbleed.show_in_explorer":
             return await executor.get_launcher_action_response(
                 args=[
-                    "addon", "colorbleed", "show-in-explorer", filepath
+                    "addon", "colorbleed", "show-in-explorer",
+                    "--project", context.project_name,
+                    "--entity_type", context.entity_type,
+                    *context.entity_ids
                 ]
             )
         elif executor.identifier == "colorbleed.open_file":
             return await executor.get_launcher_action_response(
                 args=[
-                    "addon", "colorbleed", "run", filepath
+                    "addon", "colorbleed", "run",
+                    "--project", context.project_name,
+                    "--entity_type", context.entity_type,
+                    *context.entity_ids
                 ]
             )

@@ -3,40 +3,17 @@ import platform
 import subprocess
 
 import ayon_api
+from ayon_core.pipeline import get_representation_path
 from ayon_core.addon import AYONAddon, click_wrap, ensure_addons_are_process_ready
 from ayon_core.addon.interfaces import IPluginPaths
-
+from ayon_core.lib.transcoding import (
+    VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
+)
 
 from .version import __version__
 
-
-def _resolve_entity_uris(uris):
-    """Resolve AYON Entity URIs to filepath
-
-    Arguments:
-        uris (list[str]): The AYON entity URIs.
-
-    Returns:
-        list[str]: The filepaths
-
-    """
-    response = ayon_api.post("resolve", resolveRoots=True, uris=uris)
-    if response.status_code != 200:
-        raise RuntimeError(
-            f"Unable to resolve AYON entity URI: '{uris}'"
-        )
-
-    paths = []
-    for entity in response.data["entities"]:
-        paths.append(entity["filePath"])
-    return paths
-
-
-def resolve_entity_uri(entity_uri):
-    if not entity_uri.startswith(("ayon://", "ayon+entity://")):
-        # Assume not an entity URI
-        return entity_uri
-    return _resolve_entity_uris([entity_uri])
+VIDEO_EXTENSIONS_TUPLE = tuple(VIDEO_EXTENSIONS)
+IMAGE_EXTENSIONS_TUPLE = tuple(IMAGE_EXTENSIONS)
 
 
 class ColorbleedAddon(AYONAddon, IPluginPaths):
@@ -66,7 +43,9 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
                 name="run",
                 help="Run filepaths"
             )
-            .argument("paths", nargs=-1, required=True)
+            .option("--project", required=True, help="Project name")
+            .option("--entity_type", required=True, help="Entity type")
+            .argument("entity_ids", nargs=-1, required=True)
         )
         (
             main_group.command(
@@ -74,7 +53,9 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
                 name="show-in-explorer",
                 help="Show given paths or entity URIs in explorer."
             )
-            .argument("paths", nargs=-1, required=True)
+            .option("--project", required=True, help="Project name")
+            .option("--entity_type", required=True, help="Entity type")
+            .argument("entity_ids", nargs=-1, required=True)
         )
         # Convert main command to click object and add it to parent group
         addon_click_group.add_command(
@@ -88,21 +69,71 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
             addon_version=self.version
         )
 
+    def _get_entity_paths(self, project_name, entity_type, entity_ids):
+        paths: "list[str]" = []
+        if entity_type == "version":
+            representations = ayon_api.get_representations(
+                project_name=project_name,
+                version_ids=entity_ids,
+            )
+            for representation in representations:
+                path = get_representation_path(representation)
+                paths.append(path)
+        return paths
+
     def _cli_run(
-        self, paths
+        self, project, entity_type, entity_ids
     ):
         """Run paths using OS default application"""
-        print(f"Running: {paths}")
-        for path in paths:
-            path = resolve_entity_uri(path)
-            self.run_file(path)
 
-    def _cli_show_in_explorer(self, paths):
+        paths = self._get_entity_paths(project, entity_type, entity_ids)
+        if not paths:
+            return
+
+        # Unfortunately the user is unable to pick a specific representation
+        # from the web frontend. So we will prioritize certain files over
+        # others - hoping we're running a file that makes sense to run.
+        def prioritize(path: str) -> int:
+            # Lower number is prioritized
+            order = 0
+
+            # Prefer certain image/video extensions first
+            if path.endswith(".exr"):
+                order -= 1000
+            if path.endswith("_h264.mp4"):
+                order -= 30
+            elif path.endswith(".mp4"):
+                order -= 20
+
+            # Videos first, then images
+            if path.endswith(VIDEO_EXTENSIONS_TUPLE):
+                order -= 1000
+            elif path.endswith(IMAGE_EXTENSIONS_TUPLE):
+                order -= 500
+
+            # Avoid paths that do not exist
+            if not os.path.exists(path):
+                order += 9999
+
+            return order
+
+        paths.sort(key=prioritize)
+        print(f"Sorted {paths}")
+        self.run_file(paths[0])
+
+    def _cli_show_in_explorer(
+        self, project, entity_type, entity_ids
+    ):
         """Open paths in system explorer"""
-        print(f"Running show in explorer: {paths}")
+        paths = self._get_entity_paths(project, entity_type, entity_ids)
+        folders = set()
         for path in paths:
-            path = resolve_entity_uri(path)
-            self.open_in_explorer(os.path.dirname(path))
+            if os.path.isfile(path):
+                path = os.path.dirname(path)
+            folders.add(path)
+
+        for folder in folders:
+            self.open_in_explorer(folder)
     # endregion
 
     @staticmethod
