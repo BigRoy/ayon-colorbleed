@@ -4,8 +4,12 @@ import subprocess
 
 import ayon_api
 from ayon_core.pipeline import get_representation_path
-from ayon_core.addon import AYONAddon, click_wrap, ensure_addons_are_process_ready
-from ayon_core.addon.interfaces import IPluginPaths
+from ayon_core.addon import (
+    AYONAddon,
+    IPluginPaths,
+    click_wrap,
+    ensure_addons_are_process_ready,
+)
 from ayon_core.lib.transcoding import (
     VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
 )
@@ -63,7 +67,6 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
         )
 
     def _cli_main(self):
-
         ensure_addons_are_process_ready(
             addon_name=self.name,
             addon_version=self.version
@@ -100,7 +103,7 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
             # Prefer certain image/video extensions first
             if path.endswith(".exr"):
                 order -= 1000
-            if path.endswith("_h264.mp4"):
+            elif path.endswith("_h264.mp4"):
                 order -= 30
             elif path.endswith(".mp4"):
                 order -= 20
@@ -118,7 +121,6 @@ class ColorbleedAddon(AYONAddon, IPluginPaths):
             return order
 
         paths.sort(key=prioritize)
-        print(f"Sorted {paths}")
         self.run_file(paths[0])
 
     def _cli_show_in_explorer(
